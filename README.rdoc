@@ -12,10 +12,11 @@
 
 操作方法:
 
-  d              デバッグ情報を表示
-  e              DevQuiz の答えを入力 (hjkl の文字列)
+  a              自動プレイ開始 (Ctrl-g で手動に切り替え)
+  b              DevQuiz の答え (hjkl の文字列) を入力
   r              リセット
   q              終了
+  d              デバッグ情報を表示
 
   Backspace      前の通路まで undo
   C-z            〃
@@ -31,11 +32,11 @@
 
 === DESCRIPTION
 
-pacman は DevQuiz の PAC-MAN 問題の仕様を実装したゲームです。
-pacman を利用して手動でクイズを解くことができます。
-自動で回答を探索する機能はありません。
+pacman は {Google Developer Day 2010 DevQuiz}[http://gdd-2010-quiz-japan.appspot.com] の
+PAC-MAN 問題の仕様を実装したゲームです。
 
-http://gdd-2010-quiz-japan.appspot.com/
+手動で PAC-MAN を解くことができます。
+また、自動で回答を探索することもできます。
 
 === TODO
 
