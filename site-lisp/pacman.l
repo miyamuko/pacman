@@ -32,8 +32,9 @@
 
   (unless (find-package :pacman)
     (defpackage :pacman
-      (:use :lisp :editor)
-      )))
+      (:use :lisp :editor))
+    (use-package :pacman :user)
+    ))
 
 (in-package :pacman)
 
