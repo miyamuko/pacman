@@ -25,9 +25,15 @@
 
 ;;; Code:
 
+(in-package :user)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (require "package")
-  )
+  (require "cmu_loop")
+
+  (unless (find-package :pacman)
+    (defpackage :pacman
+      (:use :lisp :editor)
+      )))
 
 (in-package :pacman)
 
