@@ -115,7 +115,7 @@
   (define-key *pacman-mode-map* #\C-M-z 'pacman-undo-to-last-eat)
   (define-key *pacman-mode-map* #\a 'pacman-auto-play)
   (define-key *pacman-mode-map* #\d 'toggle-pacman-debug)
-  (define-key *pacman-mode-map* #\e 'pacman-enter)
+  (define-key *pacman-mode-map* #\b 'pacman-batch-play)
   (define-key *pacman-mode-map* #\r 'pacman-reset)
   (define-key *pacman-mode-map* #\q 'pacman-quit)
   ;; for Windows user
@@ -203,7 +203,7 @@
       (try-all)))
   (stage-message "’TõI—¹ (answer count ~D)" (length *pacman-game-clear-pattern-list*)))
 
-(defun pacman-enter (str)
+(defun pacman-batch-play (str)
   (interactive "sEnter Answer: ")
   (if (string-matchp "[^hjkl]" str)
       (msgbox "‰ñ“š•¶š—ñ‚É•s³‚È•¶š‚ªŠÜ‚Ü‚ê‚Ä‚¢‚Ü‚·: ~S at ~D"
