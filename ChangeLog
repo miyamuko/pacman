@@ -1,0 +1,13 @@
+2010-08-22  MIYAMUKO Katsuyuki
+
+	* とりあえず push
+
+	* とりあえずできたのでコミット
+
+2010-08-21  MIYAMUKO Katsuyuki
+
+	* packman 作成開始
+	- Google Developer Day 2010 DevQuiz の PAC-MAN を解くためのもの
+	- ゲームを実装して手動で回答を探す
+	- 自動探索は実装しない
+

@@ -1,0 +1,73 @@
+== pacman - Google Developer Day 2010 DevQuiz PAC-MAN game implementation for xyzzy
+
+* Home URL: http://github.com/miyamuko/pacman
+* Version: 0.0.1
+
+
+=== SYNOPSIS
+
+ゲームの開始:
+
+  M-x pacman-start-from-clipboard
+
+操作方法:
+
+  d              デバッグ情報を表示
+  e              DevQuiz の答えを入力 (hjkl の文字列)
+  r              リセット
+  q              終了
+
+  Backspace      前の通路まで undo
+  C-z            〃
+  M-Backspace    前にドットを食べたところまで undo
+  C-M-z          〃
+
+  UP    または C-p または k     上に移動
+  Down  または C-n または j     下に移動
+  Right または C-f または l     右に移動
+  Left  または C-b または h     左に移動
+  Enter または SPC または .     その場にとどまる
+
+
+=== DESCRIPTION
+
+pacman は DevQuiz の PAC-MAN 問題の仕様を実装したゲームです。
+pacman を利用して手動でクイズを解くことができます。
+自動で回答を探索する機能はありません。
+
+http://gdd-2010-quiz-japan.appspot.com/
+
+=== TODO
+
+なし。
+
+
+=== AUTHOR
+
+みやむこ かつゆき <mailto:miyamuko@gmail.com>
+
+
+=== COPYRIGHT
+
+pacman は MIT/X ライセンスに従って本ソフトウェアを使用、再配布することができます。
+
+  Copyright (c) 2010 MIYAMUKO Katsuyuki.
+
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

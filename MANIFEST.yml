@@ -1,0 +1,20 @@
+package: packman
+version: 0.0.1
+
+sources:
+  include:
+    - site-lisp/packman/**/*.l
+  exclude:
+    - site-lisp/packman/**/tests/*.l
+
+document:
+  - README.rdoc
+
+files:
+  include:
+    - site-lisp/**/*.l
+    - site-lisp/**/*.lc
+    - site-lisp/packman/lib/*.dll
+    - site-lisp/packman/src/**/*.*
+    - site-lisp/packman/examples/**/*.*
+    - site-lisp/packman/tests/*.*
