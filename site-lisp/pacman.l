@@ -127,7 +127,7 @@
 (defun pacman-mode ()
   (interactive)
   (kill-all-local-variables)
-  (setf mode-name "PACK-MAN")
+  (setf mode-name "PAC-MAN")
   (setf buffer-mode 'pacman-mode)
   (use-keymap *pacman-mode-map*)
   (make-local-variable 'regexp-keyword-list)
@@ -138,7 +138,8 @@
 
 (defun pacman-start-from-clipboard ()
   (interactive)
-  (let ((buf (get-buffer-create "PAC-MAN")))
+  (let ((buf (get-buffer-create "*PAC-MAN*")))
+    (set-buffer buf)
     (setq need-not-save t)
     (setq auto-save nil)
     (unless (init-frame (get-clipboard-data))
