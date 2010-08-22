@@ -199,7 +199,9 @@
                (or (try1 :up)
                    (try1 :right)
                    (try1 :down)
-                   (try1 :left))))
+                   (try1 :left)
+                   (try1 :stay)
+                   )))
       (try-all)))
   (stage-message "’TõI—¹ (answer count ~D)" (length *pacman-game-clear-pattern-list*)))
 
