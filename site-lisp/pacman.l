@@ -23,6 +23,17 @@
 ;; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 ;; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+;;; Commentary:
+;;
+;; * Description
+;;
+;;   xyzzy Lisp implementation of Google Developer Day 2010 DevQuiz PAC-MAN game.
+;;
+;; * How to use:
+;;
+;;   See http://github.com/miyamuko/pacman/README.rdoc
+;;
+
 ;;; Code:
 
 (in-package :user)
@@ -64,6 +75,8 @@
 (defparameter *pacman-char-list-history* nil)
 
 (defparameter *pacman-move-history* nil)
+
+(defparameter *pacman-game-clear-pattern-list* nil)
 (defvar *pacman-game-over-pattern-list* nil)
 
 
@@ -100,6 +113,7 @@
   (define-key *pacman-mode-map* #\C-z 'pacman-undo-to-intersection)
   (define-key *pacman-mode-map* #\C-M-h 'pacman-undo-to-last-eat)
   (define-key *pacman-mode-map* #\C-M-z 'pacman-undo-to-last-eat)
+  (define-key *pacman-mode-map* #\a 'pacman-auto-play)
   (define-key *pacman-mode-map* #\d 'toggle-pacman-debug)
   (define-key *pacman-mode-map* #\e 'pacman-enter)
   (define-key *pacman-mode-map* #\r 'pacman-reset)
@@ -150,6 +164,45 @@
     (pop-to-buffer buf t)
     ))
 
+(defparameter *pacman-auto-play-p* nil)
+(defparameter *pacman-auto-play-count* 0)
+(defparameter *pacman-auto-play-refresh-count* 100)
+(defun pacman-auto-play ()
+  (interactive)
+  (setf *pacman-auto-play-count* 0)
+  (let ((*pacman-auto-play-p* t))
+    (labels ((player ()
+               (pacman-player-char))
+             (refresh-maybe ()
+               (when (zerop (mod *pacman-auto-play-count*
+                                 *pacman-auto-play-refresh-count*))
+                 (refresh-screen)
+                 (do-events))
+               (incf *pacman-auto-play-count*))
+             (try1 (direction)
+               (multiple-value-bind (char next-x next-y x y)
+                   (char-next-pos (player) direction)
+                 (let ((moveable (find-moveable-directions (player))))
+                   ;; 「移動可能」 かつ
+                   ;; 「前にいた場所ではない (他に選択肢がない場合を除く)」
+                   ;; に移動してみる
+                   (when (and (can-move-p (pacman-player-char) direction)
+                              (or (not (and (pacman-char-prev-x (player))
+                                            (= (pacman-char-prev-x (player)) next-x)
+                                            (= (pacman-char-prev-y (player)) next-y)))
+                                  (= (length moveable) 1)))
+                     (pacman-move direction)
+                     (refresh-maybe)
+                     (when (or (game-over-p) (not (try-all)))
+                       (pacman-undo))))))
+             (try-all ()
+               (or (try1 :up)
+                   (try1 :right)
+                   (try1 :down)
+                   (try1 :left))))
+      (try-all)))
+  (stage-message "探索終了 (answer count ~D)" (length *pacman-game-clear-pattern-list*)))
+
 (defun pacman-enter (str)
   (interactive "sEnter Answer: ")
   (if (string-matchp "[^hjkl]" str)
@@ -174,6 +227,10 @@
   (when (eql buffer-mode 'pacman-mode)
     (delete-buffer (selected-buffer)))
   (init-variables))
+
+(defun pacman-undo ()
+  (interactive)
+  (restore-frame))
 
 (defun pacman-undo-to-intersection ()
   (interactive)
@@ -379,16 +436,14 @@
   (new-frame)
   (move-enemy)
   (move-player direction)
-  (when (time-over-p)
-    (stage-message "time over!")
-    (return-from pacman-move nil))
   (when (game-over-p)
     (pushnew (pacman-answer) *pacman-game-over-pattern-list* :test #'string=)
-    (stage-message "game over!")
+    (stage-message (if (time-over-p) "time over!" "game over!"))
     (return-from pacman-move nil))
   ;; 時刻 t に衝突した場合、自機は時刻 t にドットを回収することはできません。
   (eat-dot)
   (when (game-clear-p)
+    (pushnew (pacman-answer) *pacman-game-clear-pattern-list* :test #'string=)
     (stage-message "all your dot are belong to pacman!")
     (ed::kill-new (pacman-answer))
     (setf *kill-ring-newer-than-clipboard-p* t
@@ -426,13 +481,10 @@
     (let ((x (pacman-char-x enemy))
           (y (pacman-char-y enemy)))
       (cond ((first-frame-p)              ; t = 0 の場合
-             (d "t = 0 ~S" enemy)
              (move-first-space enemy (list :down :left :up :right)))
             ((stage-1-way-cell-p x y)     ; 行き止まりマスの場合
-             (d "1-way ~S" enemy)
              (move-first-space enemy (list :down :left :up :right)))
             ((stage-2-way-cell-p x y)         ; 通路マスの場合
-             (d "2-way ~S" enemy)
              (move-if #'(lambda (direction)
                           (multiple-value-bind (char next-x next-y x y)
                               (char-next-pos enemy direction)
@@ -440,7 +492,6 @@
                                 (/= (pacman-char-prev-y enemy) next-y))))
                       enemy (list :up :right :down :left)))
             ((stage-intersection-p x y)       ; 交差点マスの場合
-             (d "x-way ~S" enemy)
              (move-enemy-on-intersection enemy))
             (t
              (error "Unknown cell")) ; bug
@@ -520,7 +571,7 @@
 (defun move-first-space (enemy absolute-directions)
   (move-char enemy (car (find-moveable-directions enemy absolute-directions))))
 
-(defun find-moveable-directions (char absolute-directions)
+(defun find-moveable-directions (char &optional (absolute-directions (list :up :right :down :left)))
   (remove-if-not #'(lambda (direction)
                      (can-move-p char direction))
                  absolute-directions))
@@ -530,7 +581,6 @@
          (mapcar #'(lambda (rel-dir)
                      (direction-relative->absolute rel-dir (pacman-char-direction enemy)))
                  relative-directions)))
-    (d "~S" (list (pacman-char-kind enemy) relative-directions absolute-directions))
     (move-char enemy (car (find-moveable-directions enemy absolute-directions)))))
 
 (defun direction-relative->absolute (relative-direction current-direction)
@@ -623,15 +673,19 @@
     (puts "")
     (puts "remaining time: ~A, remaining dot ~A" (current-time-remaining) (count-remaining-dot))
     (puts "message: ~A" (or *stage-message* ""))
-    (puts "answer: ~A" answer)
-    (save-excursion
-      (puts "")
-      (puts "game over pattern:")
-      (dolist (bad *pacman-game-over-pattern-list*)
-        (when (and (<= (length answer) (length bad))
-                   (string= answer bad :end2 (length answer)))
-          (puts "  ~A~%" bad)))
-      (when *pacman-debug*
+    (puts "current answer: ~A" answer)
+    (when *pacman-auto-play-p*
+      (puts "auto play count: ~A" *pacman-auto-play-count*))
+    (puts "game clear answers:")
+    (puts "~{  ~A~%~}" *pacman-game-clear-pattern-list*)
+    (when *pacman-debug*
+      (save-excursion
+        (puts "")
+        (puts "game over pattern:")
+        (dolist (bad *pacman-game-over-pattern-list*)
+          (when (and (<= (length answer) (length bad))
+                     (string= answer bad :end2 (length answer)))
+            (puts "  ~A~%" bad)))
         (dolist (sym *pacman-debug-symbols*)
           (let ((v (ignore-errors (symbol-value sym))))
             (puts "")
