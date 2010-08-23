@@ -505,23 +505,16 @@
                             (not (equal (pacman-char-prev-pos enemy) next-pos))))
                       enemy (list :up :right :down :left)))
             ((stage-intersection-p pos)       ; 交差点マスの場合
-             (move-enemy-on-intersection enemy))
+             (case (pacman-char-kind enemy)
+               (#\V (move-enemy-on-intersection-V enemy))
+               (#\H (move-enemy-on-intersection-H enemy))
+               (#\L (move-enemy-on-intersection-L enemy))
+               (#\R (move-enemy-on-intersection-R enemy))
+               (#\J (move-enemy-on-intersection-J enemy))
+               ))
             (t
              (error "Unknown cell")) ; bug
             ))))
-
-(defparameter *enemy-move-function-on-intersection-alist*
-  '((#\V . move-enemy-on-intersection-V)
-    (#\H . move-enemy-on-intersection-H)
-    (#\L . move-enemy-on-intersection-L)
-    (#\R . move-enemy-on-intersection-R)
-    (#\J . move-enemy-on-intersection-J)
-    ))
-(defun move-enemy-on-intersection (enemy)
-  (let* ((id (pacman-char-id enemy))
-         (kind (pacman-char-kind enemy))
-         (fn (cdr (assoc kind *enemy-move-function-on-intersection-alist* :test #'char=))))
-    (funcall fn enemy)))
 
 ;; - 交差点マスの場合
 ;;   - 敵 V
