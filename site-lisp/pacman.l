@@ -175,6 +175,7 @@
     ))
 
 (defparameter *pacman-auto-play-p* nil)
+(defparameter *pacman-auto-play-nest* 0)
 (defparameter *pacman-auto-play-count* 0)
 (defparameter *pacman-auto-play-high-score* nil)
 (defparameter *pacman-auto-play-refresh-count* 100)
@@ -218,12 +219,13 @@
                                  (list leftovers elapsed (pacman-answer)))))
                        (pacman-undo))))))
              (try-all ()
-               (or (try1 :up)
-                   (try1 :right)
-                   (try1 :down)
-                   (try1 :left)
-                   (try1 :stay)
-                   )))
+               (let ((*pacman-auto-play-nest* (1+ *pacman-auto-play-nest*)))
+                 (or (try1 :up)
+                     (try1 :right)
+                     (try1 :down)
+                     (try1 :left)
+                     (try1 :stay)
+                     ))))
       (try-all))
     (stage-message "íTçıèIóπ (answer count ~D)" (length *pacman-game-clear-pattern-list*))))
 
@@ -706,6 +708,7 @@
     (puts "current answer: ~A" answer)
     (when *pacman-auto-play-p*
       (puts "auto play count: ~A" *pacman-auto-play-count*)
+      (puts "auto play nest: ~A" *pacman-auto-play-nest*)
       (puts "auto high score: ~S" *pacman-auto-play-high-score*))
     (save-excursion
       (puts "game clear answers:")
