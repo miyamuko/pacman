@@ -370,11 +370,12 @@
       )))
 
 (defun make-stage (stage)
-  (mapcar #'(lambda (line)
-              (substitute-string
-               (substitute-string line "[A-Z@]" " ")
-               "\\." (string *pacman-stage-dot-char*)))
-          stage))
+  (format nil "~{~A~%~}"
+          (mapcar #'(lambda (line)
+                      (substitute-string
+                       (substitute-string line "[A-Z@]" " ")
+                       "\\." (string *pacman-stage-dot-char*)))
+                  stage)))
 
 ;; 初期状態は次の条件を満たします。
 ;;
@@ -636,8 +637,7 @@
 ;; . はそのマスにドットが置かれていることを表します。
 ;; ドットでない進入可能なマス、すなわち自機と敵の初期位置および空きマスにはドットは置かれません。
 (defun count-remaining-dot ()
-  (loop for line in *pacman-stage*
-    summing (count *pacman-stage-dot-char* line)))
+  (count *pacman-stage-dot-char* *pacman-stage*))
 
 (defun eat-dot ()
   (multiple-value-bind (_ pos)
@@ -662,10 +662,9 @@
               )))))
 
 (defun find-dot-list ()
-  (loop for line in *pacman-stage* and y = 0 then (1+ y) append
-    (loop for cell across line and x = 0 then (1+ x)
-      when (char= cell *pacman-stage-dot-char*)
-      collect (make-pos x y))))
+  (loop for cell across *pacman-stage* and i = 0 then (1+ i)
+    when (char= cell *pacman-stage-dot-char*)
+    collect (stage-index->pos i)))
 
 ;; # は壁を表します。そのマスには自機も敵も進入することができません。
 ;; 逆に壁以外のマスにはすべて進入可能です。
@@ -698,7 +697,7 @@
 (defun render-stage ()
   (erase-buffer (selected-buffer))
   (let ((answer (pacman-answer)))
-    (puts "~{~A~%~}" (stage-view))
+    (puts "~A" (stage-view))
     (puts "")
     (puts "remaining time: ~A, remaining dot ~A" (current-time-remaining) (count-remaining-dot))
     (puts "message: ~A" (or *stage-message* ""))
@@ -799,17 +798,25 @@
   (values-list (mapcar #'- pos1 pos2)))
 
 (defun stage-at (pos &optional (stage *pacman-stage*))
-  (elt (nth (pos-y pos) stage) (pos-x pos)))
+  (elt stage (pos->stage-index pos)))
 
 (defun set-stage-at (pos value &optional (stage *pacman-stage*))
-  (let ((lst (nth (pos-y pos) stage)))
-    (setf (elt lst (pos-x pos)) value)))
+  (setf (elt stage (pos->stage-index pos)) value))
+
+(defun pos->stage-index (pos)
+  (+ (* (pos-y pos) (1+ *pacman-stage-width*))
+     (pos-x pos)))
+
+(defun stage-index->pos (index)
+  (multiple-value-bind (y x)
+      (floor index (1+ *pacman-stage-width*))
+    (make-pos x y)))
 
 
 ;;; utility
 
 (defun copy-stage (stage)
-  (mapcar #'copy-seq stage))
+  (copy-seq stage))
 
 (defun copy-char-list (char-list)
   (mapcar #'copy-pacman-char char-list))
