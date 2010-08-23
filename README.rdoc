@@ -1,4 +1,4 @@
-== pacman - Google Developer Day 2010 DevQuiz PAC-MAN game implementation for xyzzy
+== pacman - xyzzy Lisp implementation of Google Developer Day 2010 DevQuiz PAC-MAN game
 
 * Home URL: http://github.com/miyamuko/pacman
 * Version: 0.0.1
@@ -33,10 +33,12 @@
 === DESCRIPTION
 
 pacman は {Google Developer Day 2010 DevQuiz}[http://gdd-2010-quiz-japan.appspot.com] の
-PAC-MAN 問題の仕様を実装したゲームです。
+{PAC-MAN 問題}[http://gdd-2010-quiz-japan.appspot.com/problems?problem=pacman]
+の仕様を xyzzy Lisp で実装したゲームです。
 
 手動で PAC-MAN を解くことができます。
-また、自動で回答を探索することもできます。
+また、自動で回答を探索することもできます (間抜けなので遅いです)。
+
 
 === TODO
 
