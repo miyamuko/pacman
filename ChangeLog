@@ -1,7 +1,11 @@
 2010-08-23  MIYAMUKO Katsuyuki
 
+	* DevQuiz の Level1 ～ 3 のステージを内部で定義した
+	M-x pacman-start-level1
+	M-x pacman-start-level2
+	M-x pacman-start-level3
+
 	* ステージ情報の持ち方を変更。
-	
 
 	* 自動探索中に見つけた回答の中で一番いいやつを表示するようにした。
 

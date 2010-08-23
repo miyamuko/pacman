@@ -8,7 +8,11 @@
 
 ゲームの開始:
 
-  M-x pacman-start-from-clipboard
+  M-x pacman-start-from-clipboard       クリップボードのステージで pacman を開始
+  M-x pacman-start-level1               DevQuiz の Level 1 で pacman を開始
+  M-x pacman-start-level2               DevQuiz の Level 2 で pacman を開始
+  M-x pacman-start-level3               DevQuiz の Level 3 で pacman を開始
+
 
 操作方法:
 

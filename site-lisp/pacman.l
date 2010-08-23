@@ -50,7 +50,65 @@
 (in-package :pacman)
 
 (export '(pacman-start-from-clipboard
+          pacman-start-level1
+          pacman-start-level2
+          pacman-start-level3
           ))
+
+(defparameter *pacman-game-stage-alist*
+  `((:Lv1 . ,(format nil "~@{~A~%~}"
+              "50"
+              "11 7"
+              "###########"
+              "#.V..#..H.#"
+              "#.##...##.#"
+              "#L#..#..R.#"
+              "#.#.###.#.#"
+              "#....@....#"
+              "###########"
+              ))
+    (:Lv2 . ,(format nil "~@{~A~%~}"
+              "300"
+              "20 17"
+              "####################"
+              "###.....L..........#"
+              "###.##.##.##L##.##.#"
+              "###.##.##.##.##.##.#"
+              "#.L................#"
+              "#.##.##.##.##.##.###"
+              "#.##.##L##.##.##.###"
+              "#.................L#"
+              "#.#.#.#J####J#.#.#.#"
+              "#L.................#"
+              "###.##.##.##.##.##.#"
+              "###.##.##R##.##.##.#"
+              "#................R.#"
+              "#.##.##.##.##R##.###"
+              "#.##.##.##.##.##.###"
+              "#@....R..........###"
+              "####################"
+              ))
+    (:Lv3 . ,(format nil "~@{~A~%~}"
+              "700"
+              "58 17"
+              "##########################################################"
+              "#........................................................#"
+              "#.###.#########.###############.########.###.#####.#####.#"
+              "#.###.#########.###############.########.###.#####.#####.#"
+              "#.....#########....J.............J.......###.............#"
+              "#####.###.......#######.#######.########.###.#######.#####"
+              "#####.###.#####J#######.#######.########.###.##   ##.#####"
+              "#####.###L#####.##   ##L##   ##.##    ##.###.##   ##.#####"
+              "#####.###..H###.##   ##.##   ##.########.###.#######J#####"
+              "#####.#########.##   ##L##   ##.########.###.###V....#####"
+              "#####.#########.#######.#######..........###.#######.#####"
+              "#####.#########.#######.#######.########.###.#######.#####"
+              "#.....................L.........########..........R......#"
+              "#L####.##########.##.##########....##....#########.#####.#"
+              "#.####.##########.##.##########.##.##.##.#########.#####.#"
+              "#.................##............##..@.##...............R.#"
+              "##########################################################"
+              ))))
 
 (defparameter *pacman-debug* nil)
 (defparameter *pacman-debug-message-list* nil)
@@ -160,15 +218,39 @@
 
 ;;; pacman-mode コマンド
 
+(defun pacman-start-level1 ()
+  (interactive)
+  (pacman-start-by-level :Lv1))
+
+(defun pacman-start-level2 ()
+  (interactive)
+  (pacman-start-by-level :Lv2))
+
+(defun pacman-start-level3 ()
+  (interactive)
+  (pacman-start-by-level :Lv3))
+
+(defun pacman-start-by-level (level)
+  (let ((stage-str (cdr (assoc level *pacman-game-stage-alist*))))
+    (pacman-start stage-str)))
+
 (defun pacman-start-from-clipboard ()
   (interactive)
+  (handler-case
+      (pacman-start (get-clipboard-data))
+    (error (c)
+      (msgbox "入力が不正です。クリップボードに DevQuiz の入力をコピーして実行してください"))))
+
+(defun pacman-start (stage)
   (let ((buf (get-buffer-create "*PAC-MAN*")))
     (set-buffer buf)
     (setq need-not-save t)
     (setq auto-save nil)
-    (unless (init-frame (get-clipboard-data))
-      (delete-buffer buf)
-      (return-from pacman-start-from-clipboard))
+    (handler-case
+        (init-frame stage)
+      (error (c)
+        (msgbox "入力が不正です。クリップボードに DevQuiz の入力をコピーして実行してください")
+        (error c)))
     (stage-message "start!")
     (pacman-mode)
     (pop-to-buffer buf t)
@@ -354,22 +436,15 @@
       (stage-message "これ以上undoできません"))))
 
 (defun init-stage (stage-str)
-  (handler-case
-      (progn
-        (let ((stage (split-string stage-str #\LFD)))
-          (setf *pacman-timelimit* (parse-integer (pop stage)))
-          (when (string-matchp "^\\([0-9]+\\) +\\([0-9]+\\)$" (pop stage))
-            (setf *pacman-stage-width* (parse-integer (match-string 1)))
-            (setf *pacman-stage-height* (parse-integer (match-string 2))))
-
-          ;; プレイヤーと敵のリストを作成
-          (setf *pacman-char-list* (make-pacman-char-list stage))
-          (setf *pacman-stage* (make-stage stage))
-          (setf *pacman-raw-data* stage-str)))
-    (error (c)
-      (msgbox "入力が不正です。クリップボードに DevQuiz の入力をコピーして実行してください")
-      nil
-      )))
+  (let ((stage (split-string stage-str #\LFD)))
+    (setf *pacman-timelimit* (parse-integer (pop stage)))
+    (when (string-matchp "^\\([0-9]+\\) +\\([0-9]+\\)$" (pop stage))
+      (setf *pacman-stage-width* (parse-integer (match-string 1)))
+      (setf *pacman-stage-height* (parse-integer (match-string 2))))
+    ;; プレイヤーと敵のリストを作成
+    (setf *pacman-char-list* (make-pacman-char-list stage))
+    (setf *pacman-stage* (make-stage stage))
+    (setf *pacman-raw-data* stage-str)))
 
 (defun make-stage (stage)
   (format nil "~{~A~%~}"
