@@ -653,6 +653,30 @@
       (find-char #\@)
     (set-stage-at x y #\SPC)))
 
+(defun find-nearest-dot ()
+  (car (sort-dot-by-distance (pacman-player-char)
+                             (find-dot-list))))
+
+(defun sort-dot-by-distance (player dot-list)
+  (flet ((euclid-distance (p1 p2)
+           (sqrt (apply '+ (mapcar #'(lambda (a b)
+                                       (expt (- a b) 2))
+                                   p1 p2)))))
+    (when dot-list
+      (let ((player-pos (list (pacman-char-x player)
+                              (pacman-char-y player))))
+        (sort dot-list
+              #'(lambda (dot-a dot-b)
+                  (< (euclid-distance dot-a player-pos)
+                     (euclid-distance dot-b player-pos)))
+              )))))
+
+(defun find-dot-list ()
+  (loop for line in *pacman-stage* and y = 0 then (1+ y) append
+    (loop for cell across line and x = 0 then (1+ x)
+      when (char= cell *pacman-stage-dot-char*)
+      collect (list x y))))
+
 ;; # は壁を表します。そのマスには自機も敵も進入することができません。
 ;; 逆に壁以外のマスにはすべて進入可能です。
 (defun can-move-p (char-designator direction)
@@ -776,8 +800,11 @@
 
 ;; 各セルの位置は左上を (1, 1), 右下を (W, H) とする座標で表されます。
 (defun relative-position (char1 char2)
-  (values (- (pacman-char-x char1) (pacman-char-x char2))
-          (- (pacman-char-y char1) (pacman-char-y char2))))
+  (relative-position-list (list (pacman-char-x char1) (pacman-char-y char1))
+                          (list (pacman-char-x char2) (pacman-char-y char2))))
+
+(defun relative-position-list (pos1 pos2)
+  (values-list (mapcar #'- pos1 pos2)))
 
 (defun stage-at (x y &optional (stage *pacman-stage*))
   (elt (nth y stage) x))
