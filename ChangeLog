@@ -1,5 +1,13 @@
 2010-08-23  MIYAMUKO Katsuyuki
 
+	* DevQuiz の Level1 ～ 3 のステージをクリアするスーパープレイの
+	を再生できるようにした。
+	M-x pacman-super-replay-level1
+	M-x pacman-super-replay-level2
+	M-x pacman-super-replay-level3
+	プレイデータは id:y-kawaz さんのエントリから拝借
+	http://d.hatena.ne.jp/y-kawaz/20100823/1282533249
+
 	* DevQuiz の Level1 ～ 3 のステージを内部で定義した
 	M-x pacman-start-level1
 	M-x pacman-start-level2

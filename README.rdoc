@@ -13,7 +13,6 @@
   M-x pacman-start-level2               DevQuiz の Level 2 で pacman を開始
   M-x pacman-start-level3               DevQuiz の Level 3 で pacman を開始
 
-
 操作方法:
 
   a              自動プレイ開始 (Ctrl-g で手動に切り替え)
@@ -32,6 +31,12 @@
   Right または C-f または l     右に移動
   Left  または C-b または h     左に移動
   Enter または SPC または .     その場にとどまる
+
+{スーパープレイ}[http://d.hatena.ne.jp/y-kawaz/20100823/1282533249]を鑑賞:
+
+  M-x pacman-super-replay-level1
+  M-x pacman-super-replay-level2
+  M-x pacman-super-replay-level3
 
 
 === DESCRIPTION

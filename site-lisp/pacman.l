@@ -53,7 +53,18 @@
           pacman-start-level1
           pacman-start-level2
           pacman-start-level3
+          pacman-super-replay-level1
+          pacman-super-replay-level2
+          pacman-super-replay-level3
           ))
+
+;; Thanks to id:y-kawaz
+;; http://d.hatena.ne.jp/y-kawaz/20100823/1282533249
+(defparameter *pacman-game-record-alist*
+  '((:Lv1 . "hlllkjllkkhhhkhhkhhhjjjjllkklkllklllj")
+    (:Lv2 . "kkklllllljjjhhhhhllkkkhkkkhhkklljklljjhlllkkhllllkkklllllkkkllljjjhhjjjlljjhljjjhhjjjhhhkjhhhhhllkkklllllkkklkkhhjjhhjjjhhhhhhkkkllljklllkkhllkkkllkkkhhhhhlljjjhhhkkkhhhhhhjjjlllkkjjllhjjjhhhkkkhhhjj")
+    (:Lv3 . "lkklllkkkkkkkkkhhhhhhhhhkkkhhhhhhhhhhhhhhhhjjkkhhhhhhhhhhhhhhjjjllllkkjjjjjjjjjjljjjllhhkkkhhhhh.jjjlllllkkklllllllllllllljjjlllllllllllhlkjhlh.lkkkkklllllllllkkkkkkjkkkklllllllllllllllljjjhhhhhhlljjjjjhhhllljjjlllljjjhhhhhhkkkllkkkkkkkkhhhhhhhhjjjjjjjjllllllllkkkkkkkkhhkkkhhhhhhjjjjjjjjjjjhhhhkkh..ljjlllllllll..ljjjhhhhhhhhhhkkhhhjjhhhkkhhhkhhhhllllk.kkkkkkklllllllllkkkhhhhhhhhhjjjhhhhhhhhjjjjjjjjlllhhhhhhhhhjjjhhhhhhhhhhhkkklllllllllkkkkkkkklllllllhhhhhh...hjhhhhhhjjjl")
+    ))
 
 (defparameter *pacman-game-stage-alist*
   `((:Lv1 . ,(format nil "~@{~A~%~}"
@@ -230,9 +241,35 @@
   (interactive)
   (pacman-start-by-level :Lv3))
 
+(defun pacman-super-replay-level1 ()
+  (interactive)
+  (pacman-super-replay-by-level :Lv1))
+
+(defun pacman-super-replay-level2 ()
+  (interactive)
+  (pacman-super-replay-by-level :Lv2))
+
+(defun pacman-super-replay-level3 ()
+  (interactive)
+  (pacman-super-replay-by-level :Lv3))
+
+(defun pacman-super-replay-by-level (level)
+  (pacman-start-by-level level)
+  (loop for i from 3 downto 1
+    do (progn
+         (stage-message "*** ~D ***" i)
+         (do-events)
+         (refresh-screen)
+         (sleep-for 1)))
+  (pacman-replay-by-level level))
+
 (defun pacman-start-by-level (level)
   (let ((stage-str (cdr (assoc level *pacman-game-stage-alist*))))
     (pacman-start stage-str)))
+
+(defun pacman-replay-by-level (level)
+  (let ((record (cdr (assoc level *pacman-game-record-alist*))))
+    (pacman-batch-play record)))
 
 (defun pacman-start-from-clipboard ()
   (interactive)
