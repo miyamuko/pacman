@@ -457,7 +457,9 @@
   (move-enemy)
   (move-player direction)
   (when (game-over-p)
-    (pushnew (pacman-answer) *pacman-game-over-pattern-list* :test #'string=)
+    (unless *pacman-auto-play-p*
+      ;; 遅いので自動探索中は記録しない
+      (pushnew (pacman-answer) *pacman-game-over-pattern-list* :test #'string=))
     (stage-message (if (time-over-p) "time over!" "game over!"))
     (return-from pacman-move nil))
   ;; 時刻 t に衝突した場合、自機は時刻 t にドットを回収することはできません。
