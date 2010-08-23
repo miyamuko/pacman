@@ -80,10 +80,20 @@
 (defvar *pacman-game-over-pattern-list* nil)
 
 
-;;; 構造体
+;;; データ型
+
+(defmacro make-pos (x y)
+  `(list ,x ,y))
+
+(defmacro pos-x (pos)
+  `(car ,pos))
+
+(defmacro pos-y (pos)
+  `(cadr ,pos))
+
 
 (defstruct pacman-char
-  id kind x y prev-x prev-y direction state)
+  id kind pos prev-pos direction state)
 
 (defun pacman-char-enemy-p (char)
   (not (pacman-char-player-p char)))
@@ -181,16 +191,15 @@
                  (do-events))
                (incf *pacman-auto-play-count*))
              (try1 (direction)
-               (multiple-value-bind (char next-x next-y x y)
+               (multiple-value-bind (char next-pos pos)
                    (char-next-pos (player) direction)
                  (let ((moveable (find-moveable-directions (player))))
                    ;; 「移動可能」 かつ
                    ;; 「前にいた場所ではない (他に選択肢がない場合を除く)」
                    ;; に移動してみる
                    (when (and (can-move-p (pacman-player-char) direction)
-                              (or (not (and (pacman-char-prev-x (player))
-                                            (= (pacman-char-prev-x (player)) next-x)
-                                            (= (pacman-char-prev-y (player)) next-y)))
+                              (or (not (and (pacman-char-prev-pos (player))
+                                            (equal (pacman-char-prev-pos (player)) next-pos)))
                                   (= (length moveable) 1)))
                      (pacman-move direction)
                      (refresh-maybe)
@@ -251,9 +260,9 @@
   (interactive)
   (while (can-undo-p)
     (restore-frame)
-    (multiple-value-bind (_ x y)
+    (multiple-value-bind (_ pos)
         (find-char #\@)
-      (when (stage-intersection-p x y)
+      (when (stage-intersection-p pos)
         (return)))))
 
 (defun pacman-undo-to-last-eat ()
@@ -378,7 +387,7 @@
                collect (make-pacman-char
                         ;; player の id は 0
                         :id (if (char= cell #\@) 0 (incf id))
-                        :kind cell :x x :y y)))))
+                        :kind cell :pos (make-pos x y))))))
     ;; player が先頭に来るようにする
     (stable-sort r #'< :key #'pacman-char-id)))
 
@@ -404,17 +413,12 @@
     (or (game-clear-p)
         (time-over-p)
         (find-if #'(lambda (enemy)
-                     (and (= (pacman-char-x player) (pacman-char-x enemy))
-                          (= (pacman-char-y player) (pacman-char-y enemy))
-                          ))
+                     (equal (pacman-char-pos player) (pacman-char-pos enemy)))
                  enemy-list)
         (find-if #'(lambda (enemy)
                      (and (not (first-frame-p))
-                          (= (pacman-char-x player) (pacman-char-prev-x enemy))
-                          (= (pacman-char-y player) (pacman-char-prev-y enemy))
-                          (= (pacman-char-prev-x player) (pacman-char-x enemy))
-                          (= (pacman-char-prev-y player) (pacman-char-y enemy))
-                          ))
+                          (equal (pacman-char-pos player) (pacman-char-prev-pos enemy))
+                          (equal (pacman-char-prev-pos player) (pacman-char-pos enemy))))
                  enemy-list))))
 
 (defun first-frame-p ()
@@ -468,22 +472,18 @@
   (render-stage))
 
 (defun move-player (direction)
-  (multiple-value-bind (x y)
-      (move-char #\@ direction)
-    (save-move-history direction)))
+  (move-char #\@ direction)
+  (save-move-history direction))
 
 (defun move-char (char-designator direction)
-  (multiple-value-bind (char next-x next-y x y)
+  (multiple-value-bind (char next-pos pos)
       (char-next-pos char-designator direction)
-    (when (not (wall-p next-x next-y))
-      (setf (pacman-char-x char) next-x
-            (pacman-char-y char) next-y
-            (pacman-char-prev-x char) x
-            (pacman-char-prev-y char) y
+    (when (not (wall-p next-pos))
+      (setf (pacman-char-pos char) next-pos
+            (pacman-char-prev-pos char) pos
             (pacman-char-direction char) direction
             )
-      (values next-x next-y))
-    ))
+      next-pos)))
 
 ;; 時刻 t = 0 においては、初期位置の 下、左、上、右 の順で最初に進入可能なマスの方向に移動します。
 ;; 時刻 t = 1, 2, ..., T-1 における移動方向は、現在位置の種別によって次のように決定されます。
@@ -493,20 +493,18 @@
 ;;   - 時刻 t-1 に居たマス以外の進入可能な隣接するマスに移動します。
 (defun move-enemy ()
   (dolist (enemy (pacman-enemy-char-list))
-    (let ((x (pacman-char-x enemy))
-          (y (pacman-char-y enemy)))
+    (let ((pos (pacman-char-pos enemy)))
       (cond ((first-frame-p)              ; t = 0 の場合
              (move-first-space enemy (list :down :left :up :right)))
-            ((stage-1-way-cell-p x y)     ; 行き止まりマスの場合
+            ((stage-1-way-cell-p pos)     ; 行き止まりマスの場合
              (move-first-space enemy (list :down :left :up :right)))
-            ((stage-2-way-cell-p x y)         ; 通路マスの場合
+            ((stage-2-way-cell-p pos)         ; 通路マスの場合
              (move-if #'(lambda (direction)
-                          (multiple-value-bind (char next-x next-y x y)
+                          (multiple-value-bind (char next-pos pos)
                               (char-next-pos enemy direction)
-                            (or (/= (pacman-char-prev-x enemy) next-x)
-                                (/= (pacman-char-prev-y enemy) next-y))))
+                            (not (equal (pacman-char-prev-pos enemy) next-pos))))
                       enemy (list :up :right :down :left)))
-            ((stage-intersection-p x y)       ; 交差点マスの場合
+            ((stage-intersection-p pos)       ; 交差点マスの場合
              (move-enemy-on-intersection enemy))
             (t
              (error "Unknown cell")) ; bug
@@ -617,30 +615,30 @@
 ;; 行き止まりマス、通路マス、交差点マスの 3 種類に分類されます。
 ;; 1 方向ある場合が行き止まりマス、2 方向ある場合が通路マス、3,4 方向ある場合が交差点マスとなります。
 
-(defun stage-1-way-cell-p (x y)
-  (= (stage-count-way x y) 1))
+(defun stage-1-way-cell-p (pos)
+  (= (stage-count-way pos) 1))
 
-(defun stage-2-way-cell-p (x y)
-  (= (stage-count-way x y) 2))
+(defun stage-2-way-cell-p (pos)
+  (= (stage-count-way pos) 2))
 
-(defun stage-3-way-cell-p (x y)
-  (= (stage-count-way x y) 3))
+(defun stage-3-way-cell-p (pos)
+  (= (stage-count-way pos) 3))
 
-(defun stage-4-way-cell-p (x y)
-  (= (stage-count-way x y) 4))
+(defun stage-4-way-cell-p (pos)
+  (= (stage-count-way pos) 4))
 
-(defun stage-intersection-p (x y)
-  (or (stage-3-way-cell-p x y)
-      (stage-4-way-cell-p x y)))
+(defun stage-intersection-p (pos)
+  (or (stage-3-way-cell-p pos)
+      (stage-4-way-cell-p pos)))
 
-(defun stage-count-way (x y)
-  (count-if-not #'(lambda (xy)
-                    (wall-p (car xy) (cdr xy)))
-                (list (cons (+ x 0) (+ y 1)) ; up
-                      (cons (+ x 1) (+ y 0)) ; right
-                      (cons (- x 1) (+ y 0)) ; left
-                      (cons (+ x 0) (- y 1)) ; down
-                      )))
+(defun stage-count-way (pos)
+  (let ((x (pos-x pos))
+        (y (pos-y pos)))
+    (count-if-not #'wall-p (list (make-pos (+ x 0) (+ y 1)) ; up
+                                 (make-pos (+ x 1) (+ y 0)) ; right
+                                 (make-pos (- x 1) (+ y 0)) ; left
+                                 (make-pos (+ x 0) (- y 1)) ; down
+                                 ))))
 
 ;; . はそのマスにドットが置かれていることを表します。
 ;; ドットでない進入可能なマス、すなわち自機と敵の初期位置および空きマスにはドットは置かれません。
@@ -649,9 +647,9 @@
     summing (count *pacman-stage-dot-char* line)))
 
 (defun eat-dot ()
-  (multiple-value-bind (_ x y)
+  (multiple-value-bind (_ pos)
       (find-char #\@)
-    (set-stage-at x y #\SPC)))
+    (set-stage-at pos #\SPC)))
 
 (defun find-nearest-dot ()
   (car (sort-dot-by-distance (pacman-player-char)
@@ -663,8 +661,7 @@
                                        (expt (- a b) 2))
                                    p1 p2)))))
     (when dot-list
-      (let ((player-pos (list (pacman-char-x player)
-                              (pacman-char-y player))))
+      (let ((player-pos (pacman-char-pos player)))
         (sort dot-list
               #'(lambda (dot-a dot-b)
                   (< (euclid-distance dot-a player-pos)
@@ -675,17 +672,17 @@
   (loop for line in *pacman-stage* and y = 0 then (1+ y) append
     (loop for cell across line and x = 0 then (1+ x)
       when (char= cell *pacman-stage-dot-char*)
-      collect (list x y))))
+      collect (make-pos x y))))
 
 ;; # は壁を表します。そのマスには自機も敵も進入することができません。
 ;; 逆に壁以外のマスにはすべて進入可能です。
 (defun can-move-p (char-designator direction)
-  (multiple-value-bind (char next-x next-y x y)
+  (multiple-value-bind (char next-pos pos)
       (char-next-pos char-designator direction)
-    (not (wall-p next-x next-y))))
+    (not (wall-p next-pos))))
 
-(defun wall-p (x y)
-  (char= (stage-at x y) #\#))
+(defun wall-p (pos)
+  (char= (stage-at pos) #\#))
 
 
 ;;; ステージの描画
@@ -743,8 +740,7 @@
 
 (defun stage-view ()
   (flet ((render-char (stage char)
-           (set-stage-at (pacman-char-x char)
-                         (pacman-char-y char)
+           (set-stage-at (pacman-char-pos char)
                          (pacman-char-kind char)
                          stage)))
     (let ((view (copy-stage *pacman-stage*)))
@@ -783,35 +779,38 @@
 (defun char-next-pos (char-designator direction)
   (multiple-value-bind (dx dy)
       (direction->diff direction)
-    (multiple-value-bind (char x y)
+    (multiple-value-bind (char pos)
         (find-char char-designator)
-      (values char (+ x dx) (+ y dy) x y))))
+      (let ((x (pos-x pos))
+            (y (pos-y pos)))
+        (values char
+                (make-pos (+ x dx) (+ y dy))
+                (make-pos x y))))))
 
 (defun find-char (char-designator)
   (let ((char (if (pacman-char-p char-designator)
                   char-designator
                 (find-if #'(lambda (char)
-                             (or (eql (pacman-char-id char) char-designator)
-                                 (eql (pacman-char-kind char) char-designator)))
+                             (or (equal (pacman-char-id char) char-designator)
+                                 (equal (pacman-char-kind char) char-designator)))
                          *pacman-char-list*))))
     (unless char
       (error "Char not found: ~S" char-designator))
-    (values char (pacman-char-x char) (pacman-char-y char))))
+    (values char (pacman-char-pos char))))
 
 ;; 各セルの位置は左上を (1, 1), 右下を (W, H) とする座標で表されます。
 (defun relative-position (char1 char2)
-  (relative-position-list (list (pacman-char-x char1) (pacman-char-y char1))
-                          (list (pacman-char-x char2) (pacman-char-y char2))))
+  (relative-position-list (pacman-char-pos char1) (pacman-char-pos char2)))
 
 (defun relative-position-list (pos1 pos2)
   (values-list (mapcar #'- pos1 pos2)))
 
-(defun stage-at (x y &optional (stage *pacman-stage*))
-  (elt (nth y stage) x))
+(defun stage-at (pos &optional (stage *pacman-stage*))
+  (elt (nth (pos-y pos) stage) (pos-x pos)))
 
-(defun set-stage-at (x y value &optional (stage *pacman-stage*))
-  (let ((lst (nth y stage)))
-    (setf (elt lst x) value)))
+(defun set-stage-at (pos value &optional (stage *pacman-stage*))
+  (let ((lst (nth (pos-y pos) stage)))
+    (setf (elt lst (pos-x pos)) value)))
 
 
 ;;; utility
