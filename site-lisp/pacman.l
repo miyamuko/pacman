@@ -166,6 +166,7 @@
 
 (defparameter *pacman-auto-play-p* nil)
 (defparameter *pacman-auto-play-count* 0)
+(defparameter *pacman-auto-play-high-score* nil)
 (defparameter *pacman-auto-play-refresh-count* 100)
 (defun pacman-auto-play ()
   (interactive)
@@ -194,6 +195,18 @@
                      (pacman-move direction)
                      (refresh-maybe)
                      (when (or (game-over-p) (not (try-all)))
+                       (let ((leftovers (count-remaining-dot))
+                             (elapsed (current-time-elapsed)))
+                         (when (or
+                                ;; 初期状態
+                                (not *pacman-auto-play-high-score*)
+                                ;; 食べ残しがより少ない
+                                (< leftovers (car *pacman-auto-play-high-score*))
+                                ;; 食べ残しは同じだが時間がより短い
+                                (and (= leftovers (car *pacman-auto-play-high-score*))
+                                     (< elapsed (cadr *pacman-auto-play-high-score*))))
+                           (setf *pacman-auto-play-high-score*
+                                 (list leftovers elapsed (pacman-answer)))))
                        (pacman-undo))))))
              (try-all ()
                (or (try1 :up)
@@ -202,8 +215,8 @@
                    (try1 :left)
                    (try1 :stay)
                    )))
-      (try-all)))
-  (stage-message "探索終了 (answer count ~D)" (length *pacman-game-clear-pattern-list*)))
+      (try-all))
+    (stage-message "探索終了 (answer count ~D)" (length *pacman-game-clear-pattern-list*))))
 
 (defun pacman-batch-play (str)
   (interactive "sEnter Answer: ")
@@ -677,7 +690,8 @@
     (puts "message: ~A" (or *stage-message* ""))
     (puts "current answer: ~A" answer)
     (when *pacman-auto-play-p*
-      (puts "auto play count: ~A" *pacman-auto-play-count*))
+      (puts "auto play count: ~A" *pacman-auto-play-count*)
+      (puts "auto high score: ~S" *pacman-auto-play-high-score*))
     (puts "game clear answers:")
     (puts "~{  ~A~%~}" *pacman-game-clear-pattern-list*)
     (when *pacman-debug*
