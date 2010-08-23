@@ -707,10 +707,10 @@
     (when *pacman-auto-play-p*
       (puts "auto play count: ~A" *pacman-auto-play-count*)
       (puts "auto high score: ~S" *pacman-auto-play-high-score*))
-    (puts "game clear answers:")
-    (puts "~{  ~A~%~}" *pacman-game-clear-pattern-list*)
-    (when *pacman-debug*
-      (save-excursion
+    (save-excursion
+      (puts "game clear answers:")
+      (puts "~{  ~A~%~}" *pacman-game-clear-pattern-list*)
+      (when *pacman-debug*
         (puts "")
         (puts "game over pattern:")
         (dolist (bad *pacman-game-over-pattern-list*)
