@@ -207,7 +207,7 @@
 
 (defun pacman-batch-play (str)
   (interactive "sEnter Answer: ")
-  (if (string-matchp "[^hjkl]" str)
+  (if (string-matchp "[^hjkl.]" str)
       (msgbox "‰ñ“š•¶š—ñ‚É•s³‚È•¶š‚ªŠÜ‚Ü‚ê‚Ä‚¢‚Ü‚·: ~S at ~D"
               (match-string 0) (match-beginning 0))
     (progn
@@ -409,7 +409,7 @@
   (= (current-time-elapsed) 0))
 
 (defun time-over-p ()
-  (<= (current-time-remaining) 0))
+  (< (current-time-remaining) (count-remaining-dot)))
 
 (defun current-time-elapsed ()
   (length *pacman-move-history*))
